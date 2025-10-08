@@ -1,7 +1,7 @@
 "use client"
-import { PanelLeftClose, PanelLeftOpen, LogOut, Mic, Brain, PanelBottom, PanelBottomClose } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, LogOut, Mic, Brain, PanelBottom, PanelBottomClose, Search, PanelRightClose, PanelRightOpen, BookOpen } from 'lucide-react';
 
-function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onToggleInsights, onToggleBottom, isBottomOpen }) {
+function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onToggleInsights, onToggleAnalysis, isAnalysisOpen, onToggleRelated, isRelatedOpen }) {
   return (
     <header className="flex items-center justify-between h-16 px-6 bg-gradient-to-r from-red-50/90 to-red-100/90 backdrop-blur-sm border-b border-red-200/50 shadow-sm flex-shrink-0">
       <div className="flex items-center gap-6">
@@ -40,13 +40,25 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
       <div className="flex items-center gap-3">
         <div className="group relative">
           <button 
-            onClick={onToggleBottom} 
+            onClick={onToggleRelated} 
             className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
           >
-            {isBottomOpen ? <PanelBottomClose size={18} className="text-red-700" /> : <PanelBottom size={18} className="text-red-700" />}
+            {isRelatedOpen ? <PanelRightClose size={18} className="text-red-700" /> : <Search size={18} className="text-red-700" />}
           </button>
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-            {isBottomOpen ? 'Hide highlights panel' : 'Show highlights panel'}
+            {isRelatedOpen ? 'Hide related findings' : 'Show related findings'}
+          </div>
+        </div>
+        
+        <div className="group relative">
+          <button 
+            onClick={onToggleAnalysis} 
+            className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            {isAnalysisOpen ? <PanelRightClose size={18} className="text-red-700" /> : <BookOpen size={18} className="text-red-700" />}
+          </button>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+            {isAnalysisOpen ? 'Hide analysis overview' : 'Show analysis overview'}
           </div>
         </div>
         

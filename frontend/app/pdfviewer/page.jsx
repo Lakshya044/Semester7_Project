@@ -4,12 +4,15 @@ import { useSearchParams, useRouter } from 'next/navigation';
 
 import Header from "../components/Header.jsx";
 import Sidebar from "../components/Sidebar.jsx";
+import RelatedFindingsSidebar from "../components/RelatedFindingsSidebar.jsx";
+import AnalysisOverviewSidebar from "../components/AnalysisOverviewSidebar.jsx";
+import SubsectionsModal from "../components/SubsectionsModal.jsx";
 import { uploadDocumentCollection, getLatestOutput } from '../lib/api';
 import { getRelated } from '../lib/api';
 import PdfJsExpressViewer from '../components/PDFViewer';
 import PodcastSidebar from "../components/PodcastSidebar";
 import InsightsSidebar from "../components/InsightsSidebar";
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, ChevronLeft, ChevronRight, FileText, Search } from 'lucide-react';
 import { getHistory } from '../lib/api';
 
 export default function PdfViewerPage() {
@@ -25,7 +28,11 @@ export default function PdfViewerPage() {
 		const [isInsightsSidebarOpen, setIsInsightsSidebarOpen] = useState(false);
 		const [selectedFile, setSelectedFile] = useState(file);
 	const [selectedPage, setSelectedPage] = useState(pageParam);
-	const [isBottomOpen, setIsBottomOpen] = useState(true);
+	const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+	const [isRelatedOpen, setIsRelatedOpen] = useState(false);
+	const [selectedSection, setSelectedSection] = useState(null);
+	const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
+	const [isSubsectionsModalOpen, setIsSubsectionsModalOpen] = useState(false);
 	const [related, setRelated] = useState(null);
 	const [lastSelectedText, setLastSelectedText] = useState('');
 	const [showCopy, setShowCopy] = useState(false);
@@ -182,10 +189,12 @@ export default function PdfViewerPage() {
 							return next;
 						});
 					}}
-					onToggleBottom={() => setIsBottomOpen((v) => !v)}
-					isBottomOpen={isBottomOpen}
+					onToggleAnalysis={() => setIsAnalysisOpen((v) => !v)}
+					isAnalysisOpen={isAnalysisOpen}
+					onToggleRelated={() => setIsRelatedOpen((v) => !v)}
+					isRelatedOpen={isRelatedOpen}
 				/>
-				<main className="flex flex-grow overflow-hidden">
+				<main className="flex flex-grow overflow-hidden relative">
 									<Sidebar
 										isOpen={isSidebarOpen}
 										documents={documents.length > 0 ? documents : [file]}
@@ -193,23 +202,52 @@ export default function PdfViewerPage() {
 										selectedPdf={selectedFile}
 										onAddFiles={handleAddFiles}
 										isAdding={isAdding}
-										queryText={queryText}
-										setQueryText={setQueryText}
-										related={related}
-										groupedRelated={groupedRelated}
-										relatedLoading={relatedLoading}
-										onSearch={runRelatedSearch}
-										onClickRelated={(r) => {
-											const targetPage = Number(r.page_number) || 1;
-											setSelectedPage(targetPage);
-											if (r.document && r.document !== selectedFile) {
-												setSelectedFile(r.document);
-												router.replace(`/pdfviewer?file=${encodeURIComponent(r.document)}&page=${targetPage}`);
-											}
-										}}
 									/>
-					<div className="relative flex-grow h-full min-h-0 p-4 flex flex-col">
-						<div className="border border-red-700 bg-white flex-none" style={{ height: isBottomOpen ? '68%' : '93%' }}>
+					<div className={`relative flex-grow h-full min-h-0 p-4 flex flex-col pdf-viewer-container transition-all duration-300 ${isAnalysisOpen ? 'mr-[420px]' : 'mr-0'}`}>
+						{/* Top Info Bar */}
+						<div className="flex-none mb-3 bg-gradient-to-r from-red-50/80 to-orange-50/80 backdrop-blur-sm border border-red-200/50 rounded-lg p-3 shadow-sm">
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-3 flex-1 min-w-0">
+									<div className="p-2 bg-red-100 rounded-lg">
+										<FileText size={20} className="text-red-700" />
+									</div>
+									<div className="flex-1 min-w-0">
+										<h3 className="font-bold text-red-900 truncate text-sm">
+											{decodeURIComponent(selectedFile || file).replace('.pdf', '')}
+										</h3>
+										<p className="text-xs text-red-600/70">
+											PDF Document • Page {selectedPage}
+										</p>
+									</div>
+								</div>
+								<div className="flex items-center gap-2">
+									<button
+										onClick={() => {
+											const newPage = Math.max(1, selectedPage - 1);
+											setSelectedPage(newPage);
+											router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${newPage}`);
+										}}
+										className="p-2 rounded-lg bg-white/60 hover:bg-red-50 border border-red-200/50 hover:border-red-300 transition-all"
+										aria-label="Previous page"
+									>
+										<ChevronLeft size={16} className="text-red-700" />
+									</button>
+									<button
+										onClick={() => {
+											const newPage = selectedPage + 1;
+											setSelectedPage(newPage);
+											router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${newPage}`);
+										}}
+										className="p-2 rounded-lg bg-white/60 hover:bg-red-50 border border-red-200/50 hover:border-red-300 transition-all"
+										aria-label="Next page"
+									>
+										<ChevronRight size={16} className="text-red-700" />
+									</button>
+								</div>
+							</div>
+						</div>
+						
+						<div className="border border-red-700 bg-white h-full">
 							<PdfJsExpressViewer docUrl={docUrl} pageNumber={selectedPage} />
 							{showCopy && (
 								<div className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-red-700 text-white px-3 py-1.5 rounded shadow">
@@ -219,84 +257,62 @@ export default function PdfViewerPage() {
 								</div>
 							)}
 						</div>
-												{isBottomOpen ? (
-												<div className="mt-2 h-[32%] flex flex-col min-h-0 bg-red-50/70 backdrop-blur-sm border border-red-300/70 rounded-md p-2 shadow-lg">
-														<div className="grid grid-cols-3 items-center mb-2 flex-none">
-																<div />
-																<h2 className="font-bold text-center">Highlighted Sections & Subsection Analysis</h2>
-																<div className="flex justify-end">
-																	<button
-																		onClick={() => setIsBottomOpen(false)}
-																		className="p-1 rounded hover:bg-red-100"
-																		aria-label="Close highlights and subsection analysis"
-																	>
-																		<X size={16} />
-																	</button>
-																</div>
-														</div>
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
-								{/* Left column: Highlighted Sections */}
-																<div className="h-full min-h-0 overflow-y-auto">
-									<h2 className="font-bold mb-2">Highlighted Sections</h2>
-									<ul className="space-y-2">
-										{((analysisData && (analysisData.extracted_sections || analysisData.highlightedSections)) || [])
-											.sort((a, b) => (a.importance_rank || 0) - (b.importance_rank || 0))
-											.map((s) => (
-												<li key={`${s.document}-${s.page_number}-${s.importance_rank}`}>
-													<button className="w-full text-left p-3 rounded-md border border-red-300/80 bg-red-50/90 backdrop-blur-sm shadow-md hover:shadow-lg hover:bg-red-100/90 transition cursor-pointer" onClick={() => {
-														const targetPage = Number(s.page_number) || 1;
-														setSelectedPage(targetPage);
-														if (s.document !== selectedFile) {
-															setSelectedFile(s.document);
-															// Preserve page in URL so the viewer effect can navigate when ready
-															router.replace(`/pdfviewer?file=${encodeURIComponent(s.document)}&page=${targetPage}`);
-														}
-													}}>
-														<div className="text-xs text-gray-500">Rank #{s.importance_rank} • {s.document}{String(s.document).toLowerCase().endsWith('.pdf') ? '' : '.pdf'} • Page {s.page_number}</div>
-														<div className="text-sm font-medium line-clamp-2">{s.section_title}</div>
-													</button>
-												</li>
-											))}
-									</ul>
-								</div>
-								{/* Middle column: Subsection Analysis */}
-														<div className="h-full min-h-0 overflow-y-auto">
-									{(() => {
-										const allSubs = Array.isArray(analysisData?.subsection_analysis) ? analysisData.subsection_analysis : [];
-										const currentDoc = normalizeName(selectedFile || file);
-										const perDoc = allSubs.filter((x) => normalizeName(x.document) === currentDoc);
-										const items = (perDoc.length ? perDoc : allSubs).slice(0, 100); // cap to avoid heavy DOM
-										return items.length ? (
-											<>
-												<h3 className="font-semibold mb-2">Subsection Analysis{perDoc.length ? '' : ' (all documents)'} </h3>
-												<ul className="space-y-2">
-													{items.map((x, idx) => (
-														<li key={`sub-${idx}`} className="text-xs text-gray-700 p-3 rounded-md border border-red-300/80 bg-red-50/90 backdrop-blur-sm shadow-md">
-															<div className="text-gray-500">{x.document}{String(x.document).toLowerCase().endsWith('.pdf') ? '' : '.pdf'} • Page {x.page_number}</div>
-																<div className="mt-1 whitespace-pre-wrap break-words">{x.refined_text}</div>
-														</li>
-													))}
-												</ul>
-											</>
-										) : (
-											<>
-												<h3 className="font-semibold mb-2">Subsection Analysis</h3>
-												<div className="text-xs text-gray-500">No items available.</div>
-											</>
-										);
-									})()}
-								</div>
-								{/* Right column removed: Related Findings moved to left Sidebar */}
-																					</div>
-																			</div>
-																									) : (
-																										<div className="absolute left-4 right-4 bottom-4 h-8 flex items-center justify-center md:justify-between px-3 bg-red-50 border border-red-200 text-red-700 rounded cursor-pointer shadow"
-																												 onClick={() => setIsBottomOpen(true)}
-																												 aria-label="Show highlights and subsection analysis">
-																											<span className="text-xs font-medium">Highlighted Section & Sub-Section Analysis</span>
-																										</div>
-																									)}
 					</div>
+					
+					<RelatedFindingsSidebar
+						isOpen={isRelatedOpen}
+						onClose={() => setIsRelatedOpen(false)}
+						queryText={queryText}
+						setQueryText={setQueryText}
+						related={related}
+						groupedRelated={groupedRelated}
+						relatedLoading={relatedLoading}
+						onSearch={runRelatedSearch}
+						onClickRelated={(r) => {
+							const targetPage = Number(r.page_number) || 1;
+							setSelectedPage(targetPage);
+							if (r.document && r.document !== selectedFile) {
+								setSelectedFile(r.document);
+								router.replace(`/pdfviewer?file=${encodeURIComponent(r.document)}&page=${targetPage}`);
+							}
+						}}
+					/>
+					
+					<AnalysisOverviewSidebar
+						isOpen={isAnalysisOpen}
+						onClose={() => setIsAnalysisOpen(false)}
+						analysisData={analysisData}
+						selectedFile={selectedFile}
+						onNavigate={(pageNum) => {
+							const targetPage = Number(pageNum) || 1;
+							setSelectedPage(targetPage);
+							router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${targetPage}`);
+						}}
+						onViewSubsections={(section, index) => {
+							setSelectedSection(section);
+							setSelectedSectionIndex(index);
+							setIsSubsectionsModalOpen(true);
+						}}
+					/>
+
+					<SubsectionsModal
+						isOpen={isSubsectionsModalOpen}
+						onClose={() => setIsSubsectionsModalOpen(false)}
+						section={selectedSection}
+						sectionIndex={selectedSectionIndex}
+						onNavigate={(pageNum, doc) => {
+							const targetPage = Number(pageNum) || 1;
+							setSelectedPage(targetPage);
+							if (doc && doc !== selectedFile) {
+								setSelectedFile(doc);
+								router.replace(`/pdfviewer?file=${encodeURIComponent(doc)}&page=${targetPage}`);
+							} else {
+								router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${targetPage}`);
+							}
+							setIsSubsectionsModalOpen(false);
+						}}
+					/>
+					
 					<PodcastSidebar 
 						isOpen={isPodcastSidebarOpen} 
 						onClose={() => setIsPodcastSidebarOpen(false)} 
@@ -306,6 +322,28 @@ export default function PdfViewerPage() {
 						onClose={() => setIsInsightsSidebarOpen(false)} 
 					/>
 				</main>
+				
+				<style jsx global>{`
+					.custom-scrollbar {
+						scrollbar-width: thin;
+						scrollbar-color: rgba(100, 116, 139, 0.3) rgba(100, 116, 139, 0.1);
+					}
+					.custom-scrollbar::-webkit-scrollbar {
+						width: 5px;
+						height: 5px;
+					}
+					.custom-scrollbar::-webkit-scrollbar-track {
+						background: rgba(100, 116, 139, 0.1);
+						border-radius: 3px;
+					}
+					.custom-scrollbar::-webkit-scrollbar-thumb {
+						background: rgba(100, 116, 139, 0.3);
+						border-radius: 3px;
+					}
+					.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+						background: rgba(100, 116, 139, 0.5);
+					}
+				`}</style>
 			</div>
 		);
 }
