@@ -1,0 +1,375 @@
+"use client";
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+
+import Header from "../components/Header.jsx";
+import Sidebar from "../components/Sidebar.jsx";
+import RelatedFindingsSidebar from "../components/RelatedFindingsSidebar.jsx";
+import AnalysisOverviewSidebar from "../components/AnalysisOverviewSidebar.jsx";
+import SubsectionsModal from "../components/SubsectionsModal.jsx";
+import { uploadDocumentCollection, getLatestOutput } from '../lib/api';
+import { getRelated } from '../lib/api';
+import PdfJsExpressViewer from '../components/PDFViewer';
+import PodcastSidebar from "../components/PodcastSidebar";
+import InsightsSidebar from "../components/InsightsSidebar";
+import { Loader2, X, ChevronLeft, ChevronRight, FileText, Search } from 'lucide-react';
+import { getHistory } from '../lib/api';
+
+export default function PdfViewerPage() {
+	const searchParams = useSearchParams();
+	const router = useRouter();
+	const file = searchParams.get('file');
+	const pageParam = Number(searchParams.get('page')) || 1;
+			const [analysisData, setAnalysisData] = useState(null);
+			const [documents, setDocuments] = useState([]);
+			const [isAdding, setIsAdding] = useState(false);
+		const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+		const [isPodcastSidebarOpen, setIsPodcastSidebarOpen] = useState(false);
+		const [isInsightsSidebarOpen, setIsInsightsSidebarOpen] = useState(false);
+		const [selectedFile, setSelectedFile] = useState(file);
+	const [selectedPage, setSelectedPage] = useState(pageParam);
+	const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+	const [isRelatedOpen, setIsRelatedOpen] = useState(false);
+	const [selectedSection, setSelectedSection] = useState(null);
+	const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
+	const [isSubsectionsModalOpen, setIsSubsectionsModalOpen] = useState(false);
+	const [related, setRelated] = useState(null);
+	const [lastSelectedText, setLastSelectedText] = useState('');
+	const [showCopy, setShowCopy] = useState(false);
+	const [queryText, setQueryText] = useState('');
+	const [relatedLoading, setRelatedLoading] = useState(false);
+
+	// Listen for related results from PDF selection
+	useEffect(() => {
+		function onRelated(e) {
+			setRelated(e.detail);
+		}
+		window.addEventListener('axon:relatedResults', onRelated);
+		function onSelected(e) {
+			const text = (e && e.detail && e.detail.text) || '';
+			setLastSelectedText(text);
+			setShowCopy(!!text);
+			if (text) setQueryText(text);
+		}
+		window.addEventListener('axon:selectedText', onSelected);
+		return () => window.removeEventListener('axon:relatedResults', onRelated);
+	}, []);
+
+	const runRelatedSearch = async () => {
+		const text = String(queryText || '').trim();
+		if (!text || text.length < 3) return;
+		setRelatedLoading(true);
+		try {
+			const resp = await getRelated(text, 20);
+			setRelated(resp || { results: [] });
+		} catch (e) {
+			console.warn('Related search failed:', e);
+			setRelated({ results: [] });
+		} finally {
+			setRelatedLoading(false);
+		}
+	};
+
+	const handleCopySelected = async () => {
+		const text = String(lastSelectedText || '').trim();
+		if (!text) return;
+		try {
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				await navigator.clipboard.writeText(text);
+			} else {
+				// Fallback to hidden textarea
+				const ta = document.createElement('textarea');
+				ta.value = text;
+				ta.style.position = 'fixed';
+				ta.style.left = '-9999px';
+				document.body.appendChild(ta);
+				ta.focus();
+				ta.select();
+				document.execCommand('copy');
+				document.body.removeChild(ta);
+			}
+		} catch (e) {
+			console.warn('Top-level copy failed:', e);
+		} finally {
+			setShowCopy(false);
+		}
+	};
+
+	const groupedRelated = useMemo(() => {
+		const out = { similar: [], contradictory: [], extends: [], problems: [] };
+		if (!related || !Array.isArray(related.results)) return out;
+		for (const r of related.results) {
+			const key = r.relation || 'similar';
+			(out[key] || out.similar).push(r);
+		}
+		return out;
+	}, [related]);
+
+	useEffect(() => {
+		// Try to get analysisData from sessionStorage
+		const storedData = sessionStorage.getItem('analysisData');
+					if (storedData) {
+						const data = JSON.parse(storedData);
+						const docs = (data && data.metadata && data.metadata.input_documents) || data.documents || [];
+						setAnalysisData(data);
+						setDocuments(docs);
+						sessionStorage.removeItem('analysisData');
+						return;
+					}
+
+		// Fallback: fetch latest output from backend
+		getLatestOutput()
+			.then((data) => {
+				if (!data) return;
+				const docs = (data && data.metadata && data.metadata.input_documents) || [];
+				setAnalysisData(data);
+				setDocuments(docs);
+			})
+			.catch(() => {});
+	}, []);
+
+	if (!file) return <div className="text-red-500">No PDF specified.</div>;
+		const docUrl = `/pdfs/${encodeURIComponent(file)}`;
+
+		// Normalize helper: decode, lowercase, trim, strip optional .pdf suffix
+		const normalizeName = (name) => {
+			if (!name) return "";
+			const decoded = decodeURIComponent(String(name)).trim().toLowerCase();
+			return decoded.endsWith('.pdf') ? decoded.slice(0, -4) : decoded;
+		};
+
+		// Handler to switch PDFs by updating the query param
+			const handlePdfSelect = (pdfName) => {
+				if (pdfName && pdfName !== selectedFile) {
+					setSelectedFile(pdfName);
+					router.replace(`/pdfviewer?file=${encodeURIComponent(pdfName)}`);
+				}
+			};
+				const handleAddFiles = async (files) => {
+					if (!analysisData) return;
+					setIsAdding(true);
+					try {
+						// process new files through backend
+						const newData = await uploadDocumentCollection(
+							files,
+							analysisData.collectionName,
+							analysisData.personaRole,
+							analysisData.jobTask
+						);
+						setAnalysisData(newData);
+						setDocuments(newData.documents || []);
+						// if first file of newData differs, navigate to it
+						if (newData.documents && newData.documents.length) {
+							const latest = newData.documents[newData.documents.length - 1];
+							router.replace(`/pdfviewer?file=${encodeURIComponent(latest)}`);
+						}
+					} catch (err) {
+						console.error('Error adding files:', err);
+					} finally {
+						setIsAdding(false);
+					}
+				};
+
+		return (
+			<div className="flex flex-col h-screen bg-gradient-to-br from-slate-100 via-indigo-50 to-purple-100">{isRelatedOpen ? <PanelRightClose size={18} className="text-cyan-700" /> : <Search size={18} className="text-cyan-700" />}
+          </button>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+            {isRelatedOpen ? 'Hide related findings' : 'Show related findings'}
+          </div>
+        </div>
+        
+        <div className="group relative">
+          <button 
+            onClick={onToggleAnalysis} 
+            className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            {isAnalysisOpen ? <PanelRightClose size={18} className="text-red-700" /> : <BookOpen size={18} className="text-red-700" />}
+          </button>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+            {isAnalysisOpen ? 'Hide analysis overview' : 'Show analysis overview'}
+          </div>
+				<Header 
+					isSidebarOpen={isSidebarOpen} 
+					toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+					onTogglePodcast={() => {
+						setIsPodcastSidebarOpen((prev) => {
+							const next = !prev;
+							if (next) setIsInsightsSidebarOpen(false);
+							return next;
+						});
+					}}
+					onToggleInsights={() => {
+						setIsInsightsSidebarOpen((prev) => {
+							const next = !prev;
+							if (next) setIsPodcastSidebarOpen(false);
+							return next;
+						});
+					}}
+					onToggleAnalysis={() => setIsAnalysisOpen((v) => !v)}
+					isAnalysisOpen={isAnalysisOpen}
+					onToggleRelated={() => setIsRelatedOpen((v) => !v)}
+					isRelatedOpen={isRelatedOpen}
+				/>
+				<main className="flex flex-grow overflow-hidden relative">
+									<Sidebar
+										isOpen={isSidebarOpen}
+										documents={documents.length > 0 ? documents : [file]}
+										onPdfSelect={handlePdfSelect}
+										selectedPdf={selectedFile}
+										onAddFiles={handleAddFiles}
+										isAdding={isAdding}
+									/>
+					<div className={`relative flex-grow h-full min-h-0 p-4 flex flex-col pdf-viewer-container transition-all duration-300 ${isAnalysisOpen ? 'mr-[420px]' : 'mr-0'}`}>
+						{/* Top Info Bar - Enhanced Futuristic Design */}
+						<div className="flex-none mb-4 bg-gradient-to-r from-indigo-900/80 via-purple-900/80 to-pink-900/80 backdrop-blur-md border-2 border-purple-500/30 rounded-2xl p-4 shadow-2xl relative overflow-hidden group">
+							{/* Animated background elements */}
+							<div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+							<div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
+							
+							<div className="relative z-10 flex items-center justify-between">
+								<div className="flex items-center gap-4 flex-1 min-w-0">
+									<div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg">
+										<FileText size={24} className="text-white" />
+									</div>
+									<div className="flex-1 min-w-0">
+										<h3 className="font-bold text-white truncate text-base mb-1">
+											{decodeURIComponent(selectedFile || file).replace('.pdf', '')}
+										</h3>
+										<div className="flex items-center gap-3">
+											<span className="text-xs font-semibold px-3 py-1 rounded-lg bg-purple-500/30 text-purple-100 border border-purple-400/30">
+												PDF Document
+											</span>
+											<span className="text-xs font-semibold text-purple-200 flex items-center gap-1.5">
+												<div className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse"></div>
+												Page {selectedPage}
+											</span>
+										</div>
+									</div>
+								</div>
+								<div className="flex items-center gap-2">
+									<button
+										onClick={() => {
+											const newPage = Math.max(1, selectedPage - 1);
+											setSelectedPage(newPage);
+											router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${newPage}`);
+										}}
+										className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg"
+										aria-label="Previous page"
+									>
+										<ChevronLeft size={18} className="text-white" />
+									</button>
+									<button
+										onClick={() => {
+											const newPage = selectedPage + 1;
+											setSelectedPage(newPage);
+											router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${newPage}`);
+										}}
+										className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg"
+										aria-label="Next page"
+									>
+										<ChevronRight size={18} className="text-white" />
+									</button>
+								</div>
+							</div>
+						</div>
+						
+						<div className="border-2 border-purple-500/30 bg-gradient-to-br from-slate-50 to-indigo-50/30 h-full rounded-2xl shadow-2xl overflow-hidden">
+							<PdfJsExpressViewer docUrl={docUrl} pageNumber={selectedPage} />
+							{showCopy && (
+								<div className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-red-700 text-white px-3 py-1.5 rounded shadow">
+									<span className="text-xs max-w-[40vw] truncate" title={lastSelectedText}>Copy selected</span>
+									<button onClick={handleCopySelected} className="text-xs font-semibold underline">Copy</button>
+									<button onClick={() => setShowCopy(false)} className="text-xs">×</button>
+								</div>
+							)}
+						</div>
+					</div>
+					
+					<RelatedFindingsSidebar
+						isOpen={isRelatedOpen}
+						onClose={() => setIsRelatedOpen(false)}
+						queryText={queryText}
+						setQueryText={setQueryText}
+						related={related}
+						groupedRelated={groupedRelated}
+						relatedLoading={relatedLoading}
+						onSearch={runRelatedSearch}
+						onClickRelated={(r) => {
+							const targetPage = Number(r.page_number) || 1;
+							setSelectedPage(targetPage);
+							if (r.document && r.document !== selectedFile) {
+								setSelectedFile(r.document);
+								router.replace(`/pdfviewer?file=${encodeURIComponent(r.document)}&page=${targetPage}`);
+							}
+						}}
+					/>
+					
+					<AnalysisOverviewSidebar
+						isOpen={isAnalysisOpen}
+						onClose={() => setIsAnalysisOpen(false)}
+						analysisData={analysisData}
+						selectedFile={selectedFile}
+						onNavigate={(pageNum) => {
+							const targetPage = Number(pageNum) || 1;
+							setSelectedPage(targetPage);
+							router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${targetPage}`);
+						}}
+						onViewSubsections={(section, index) => {
+							setSelectedSection(section);
+							setSelectedSectionIndex(index);
+							setIsSubsectionsModalOpen(true);
+						}}
+					/>
+
+					<SubsectionsModal
+						isOpen={isSubsectionsModalOpen}
+						onClose={() => setIsSubsectionsModalOpen(false)}
+						section={selectedSection}
+						sectionIndex={selectedSectionIndex}
+						onNavigate={(pageNum, doc) => {
+							const targetPage = Number(pageNum) || 1;
+							setSelectedPage(targetPage);
+							if (doc && doc !== selectedFile) {
+								setSelectedFile(doc);
+								router.replace(`/pdfviewer?file=${encodeURIComponent(doc)}&page=${targetPage}`);
+							} else {
+								router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${targetPage}`);
+							}
+							setIsSubsectionsModalOpen(false);
+						}}
+					/>
+					
+					<PodcastSidebar 
+						isOpen={isPodcastSidebarOpen} 
+						onClose={() => setIsPodcastSidebarOpen(false)} 
+					/>
+					<InsightsSidebar 
+						isOpen={isInsightsSidebarOpen} 
+						onClose={() => setIsInsightsSidebarOpen(false)} 
+					/>
+				</main>
+				
+				<style jsx global>{`
+					.custom-scrollbar {
+						scrollbar-width: thin;
+						scrollbar-color: rgba(100, 116, 139, 0.3) rgba(100, 116, 139, 0.1);
+					}
+					.custom-scrollbar::-webkit-scrollbar {
+						width: 5px;
+						height: 5px;
+					}
+					.custom-scrollbar::-webkit-scrollbar-track {
+						background: rgba(100, 116, 139, 0.1);
+						border-radius: 3px;
+					}
+					.custom-scrollbar::-webkit-scrollbar-thumb {
+						background: rgba(100, 116, 139, 0.3);
+						border-radius: 3px;
+					}
+					.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+						background: rgba(100, 116, 139, 0.5);
+					}
+				`}</style>
+			</div>
+		);
+}

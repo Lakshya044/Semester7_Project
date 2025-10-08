@@ -19,57 +19,100 @@ function Sidebar({
   };
 
   return (
-    <aside className={`transition-all duration-300 ease-in-out flex-shrink-0 h-full bg-gradient-to-b from-red-50/95 to-red-100/95 backdrop-blur-sm border-r border-red-200/60 shadow-lg overflow-hidden ${isOpen ? 'w-72' : 'w-0'}`}>
-      <div className={`${!isOpen && 'hidden'} h-full flex flex-col overflow-hidden`}>
-        {/* Header */}
-        <div className="flex-shrink-0 p-4 pb-3 border-b border-red-200/50">
-          <h2 className="text-lg font-bold bg-gradient-to-r from-red-700 to-red-800 bg-clip-text text-transparent mb-1">
-            My Documents
-          </h2>
-          <p className="text-xs text-red-600/70">
-            {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
-          </p>
+    <aside className={`transition-all duration-500 ease-in-out flex-shrink-0 h-full bg-gradient-to-br from-cyan-50/40 via-teal-50/30 to-emerald-50/40 backdrop-blur-xl border-r border-cyan-200/30 shadow-2xl overflow-hidden ${isOpen ? 'w-80' : 'w-0'}`}>
+      <div className={`${!isOpen && 'hidden'} h-full flex flex-col overflow-hidden relative`}>
+        {/* Animated background elements */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+        <div className="absolute -top-32 -left-32 w-64 h-64 bg-cyan-400/10 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
+        <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl animate-pulse pointer-events-none" style={{animationDelay: '1.5s'}}></div>
+        
+        {/* Header with Gradient */}
+        <div className="relative flex-shrink-0 p-6 pb-4 border-b border-cyan-200/30 bg-gradient-to-r from-cyan-500/10 via-teal-500/10 to-emerald-500/10 backdrop-blur-sm overflow-hidden z-10">
+          <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 shadow-lg">
+                <FileText size={22} className="text-white" />
+              </div>
+              <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-700 via-teal-700 to-emerald-700 bg-clip-text text-transparent">
+                My Documents
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+              <p className="text-xs font-semibold bg-gradient-to-r from-cyan-700 to-teal-700 bg-clip-text text-transparent">
+                {documents.length} document{documents.length !== 1 ? 's' : ''} ready
+              </p>
+            </div>
+          </div>
         </div>
 
-  {/* Documents List */}
-  <div className="flex-1 overflow-hidden px-3 py-3 min-h-0 flex flex-col">
-    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-        <ul className="space-y-2">
+  {/* Documents List - Enhanced */}
+  <div className="relative flex-1 overflow-hidden px-4 py-4 min-h-0 flex flex-col z-10">
+    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar-docs">
+        <ul className="space-y-3">
           {documents.length > 0 ? (
             documents.map((doc) => (
-              <li key={doc}>
+              <li key={doc} className="transform transition-all duration-300 hover:scale-[1.02]">
                 <button
                   onClick={() => onPdfSelect?.(doc)}
-                  className={`w-full text-left p-3.5 rounded-lg border transition-all duration-200 group ${
+                  className={`relative w-full text-left p-4 rounded-xl border-2 transition-all duration-300 group overflow-hidden ${
                     selectedPdf === doc
-                      ? 'bg-red-100 border-red-300 shadow-md ring-2 ring-red-200'
-                      : 'bg-white/70 border-red-200/50 hover:bg-red-50 hover:border-red-300 hover:shadow-sm'
+                      ? 'bg-gradient-to-br from-cyan-100/90 to-teal-100/90 border-cyan-400/70 shadow-xl ring-2 ring-cyan-300/50'
+                      : 'bg-white/60 backdrop-blur-sm border-cyan-200/50 hover:bg-gradient-to-br hover:from-cyan-50/80 hover:to-teal-50/80 hover:border-cyan-300/70 hover:shadow-lg'
                   }`}
                 >
-                  <div className="flex items-start gap-2.5">
-                    <div className={`p-1.5 rounded-md flex-shrink-0 ${
-                      selectedPdf === doc ? 'bg-red-200' : 'bg-red-100 group-hover:bg-red-200'
-                    } transition-colors duration-200`}>
-                      <FileText size={16} className="text-red-700" />
+                  {/* Animated hover gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -translate-x-full group-hover:translate-x-full pointer-events-none" style={{transition: 'transform 0.8s'}}></div>
+                  
+                  <div className="relative flex items-start gap-3">
+                    <div className={`p-2 rounded-xl flex-shrink-0 shadow-sm ${
+                      selectedPdf === doc 
+                        ? 'bg-gradient-to-br from-cyan-500 to-teal-600' 
+                        : 'bg-gradient-to-br from-cyan-400/70 to-teal-500/70 group-hover:from-cyan-500 group-hover:to-teal-600'
+                    } transition-all duration-300`}>
+                      <FileText size={18} className="text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold text-sm leading-relaxed break-words ${
-                        selectedPdf === doc ? 'text-red-900' : 'text-red-800'
-                      }`}>
+                      <p className={`font-bold text-sm leading-relaxed break-words ${
+                        selectedPdf === doc 
+                          ? 'text-cyan-900' 
+                          : 'text-cyan-800 group-hover:text-cyan-900'
+                      } transition-colors duration-200`}>
                         {doc.replace('.pdf', '')}
                       </p>
-                      <p className="text-xs text-red-600/60 mt-0.5">PDF Document</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                          selectedPdf === doc
+                            ? 'bg-cyan-500/20 text-cyan-700'
+                            : 'bg-cyan-500/10 text-cyan-600 group-hover:bg-cyan-500/20'
+                        } transition-colors duration-200`}>
+                          PDF
+                        </span>
+                        {selectedPdf === doc && (
+                          <span className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            Active
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </button>
               </li>
             ))
           ) : (
-            <li className="text-center py-8">
-              <div className="bg-white/60 backdrop-blur-sm border border-red-200/50 rounded-lg p-6">
-                <FileText size={32} className="text-red-400 mx-auto mb-3" />
-                <p className="text-red-700 text-sm font-medium mb-1">No documents yet</p>
-                <p className="text-red-500/60 text-xs">Upload PDFs using the button below</p>
+            <li className="text-center py-12 animate-fadeIn">
+              <div className="relative bg-white/60 backdrop-blur-md border-2 border-cyan-200/50 rounded-2xl p-8 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/50 to-teal-50/50 opacity-50"></div>
+                <div className="relative">
+                  <div className="relative inline-block mb-4">
+                    <div className="absolute inset-0 bg-cyan-400/20 rounded-full blur-xl animate-pulse"></div>
+                    <FileText size={48} className="text-cyan-400 relative z-10" />
+                  </div>
+                  <p className="text-cyan-800 text-sm font-bold mb-2">No documents yet</p>
+                  <p className="text-cyan-600/70 text-xs leading-relaxed">Upload PDFs using the<br/>button below to get started</p>
+                </div>
               </div>
             </li>
           )}
@@ -77,51 +120,88 @@ function Sidebar({
       </div>
     </div>
 
-        {/* Add Files Button */}
-        <div className="flex-shrink-0 p-4 pt-3 border-t border-red-200/50 bg-white/20">
+        {/* Add Files Button - Enhanced */}
+        <div className="relative flex-shrink-0 p-5 pt-4 border-t border-cyan-200/30 bg-gradient-to-r from-cyan-500/5 via-teal-500/5 to-emerald-500/5 backdrop-blur-sm z-10">
           <button
             onClick={handleAddClick}
             disabled={isAdding}
-            className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm text-sm ${
+            className={`relative w-full py-4 px-5 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-3 shadow-lg text-sm overflow-hidden group ${
               isAdding 
-                ? 'bg-red-400 cursor-not-allowed' 
-                : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover:shadow-lg active:scale-[0.98]'
+                ? 'bg-gradient-to-r from-slate-400 to-slate-500 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-700 hover:via-teal-700 hover:to-emerald-700 hover:shadow-2xl active:scale-[0.98] hover:scale-[1.02]'
             } text-white`}
           >
-            {isAdding ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <PlusCircle size={18} />
-                <span>Add More Files</span>
-              </>
+            {/* Animated background shine */}
+            {!isAdding && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -translate-x-full group-hover:translate-x-full" style={{transition: 'transform 1s'}}></div>
             )}
+            
+            <div className="relative z-10 flex items-center gap-3">
+              {isAdding ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Processing</span>
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <PlusCircle size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                  <span>Add More Files</span>
+                </>
+              )}
+            </div>
           </button>
           <input ref={fileInputRef} type="file" accept=".pdf" multiple className="hidden" onChange={handleFilesChange} />
         </div>
       </div>
 
       <style jsx global>{`
-        .custom-scrollbar {
+        /* Futuristic Document Scrollbar */
+        .custom-scrollbar-docs {
           scrollbar-width: thin;
-          scrollbar-color: rgba(239, 68, 68, 0.3) rgba(239, 68, 68, 0.1);
+          scrollbar-color: rgba(6, 182, 212, 0.4) rgba(6, 182, 212, 0.1);
         }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 5px;
+        .custom-scrollbar-docs::-webkit-scrollbar {
+          width: 6px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(239, 68, 68, 0.1);
-          border-radius: 3px;
+        .custom-scrollbar-docs::-webkit-scrollbar-track {
+          background: linear-gradient(to bottom, rgba(6, 182, 212, 0.05), rgba(20, 184, 166, 0.05));
+          border-radius: 10px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(239, 68, 68, 0.3);
-          border-radius: 3px;
+        .custom-scrollbar-docs::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, rgba(6, 182, 212, 0.6), rgba(20, 184, 166, 0.6));
+          border-radius: 10px;
+          transition: all 0.3s ease;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(239, 68, 68, 0.5);
+        .custom-scrollbar-docs::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, rgba(6, 182, 212, 0.8), rgba(20, 184, 166, 0.8));
+        }
+        
+        /* Grid Pattern */
+        .bg-grid-pattern {
+          background-image: 
+            linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+          background-size: 20px 20px;
+        }
+        
+        /* Fade In Animation */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out forwards;
         }
       `}</style>
     </aside>
