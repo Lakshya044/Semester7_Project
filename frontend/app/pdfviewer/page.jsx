@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 import Header from "../components/Header.jsx";
@@ -12,7 +12,7 @@ import InsightsSidebar from "../components/InsightsSidebar";
 import { Loader2, X } from 'lucide-react';
 import { getHistory } from '../lib/api';
 
-function PdfViewerContent() {
+export default function PdfViewerPage() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const file = searchParams.get('file');
@@ -308,12 +308,4 @@ function PdfViewerContent() {
 				</main>
 			</div>
 		);
-}
-
-export default function PdfViewerPage() {
-	return (
-		<Suspense fallback={<div className="p-4 text-red-700">Loading viewer…</div>}>
-			<PdfViewerContent />
-		</Suspense>
-	);
 }

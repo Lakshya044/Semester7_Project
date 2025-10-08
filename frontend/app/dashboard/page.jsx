@@ -68,14 +68,14 @@ export default function DashboardPage() {
         onToggleInsights={() => setIsInsightsSidebarOpen(!isInsightsSidebarOpen)}
       />
       <main className="flex flex-grow overflow-hidden">
-        <Sidebar isOpen={isSidebarOpen} data={analysisData} history={history} onSectionSelect={handleSectionSelect} onCollectionSelect={handleCollectionSelect} />
+        {/* <Sidebar isOpen={isSidebarOpen} data={analysisData} history={history} onSectionSelect={handleSectionSelect} onCollectionSelect={handleCollectionSelect} /> */}
         <div className="flex-grow h-full">
-          <PDFViewer docUrl={selectedDoc.url} pageNumber={selectedDoc.page} />
+          {/* <PDFViewer docUrl={selectedDoc.url} pageNumber={selectedDoc.page} /> */}
         </div>
-        <InsightsSidebar 
+        {/* <InsightsSidebar 
           isOpen={isInsightsSidebarOpen} 
           onClose={() => setIsInsightsSidebarOpen(false)} 
-        />
+        /> */}
       </main>
     </div>
   );

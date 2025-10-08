@@ -20,24 +20,18 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
           <div className="relative overflow-hidden flex flex-row cursor-pointer">
             <div className="text-3xl font-black bg-gradient-to-r from-red-600 via-red-500 to-red-700 bg-clip-text text-red flex">
               <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '0ms'}}>A</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '300ms'}}>d</span>
+              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '300ms'}}>x</span>
               <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '600ms'}}>o</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '900ms'}}>b</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '1200ms'}}>e</span>
+              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '900ms'}}>n</span>
             </div>
             <span className='p-2'></span>
             <div className="text-3xl font-black bg-gradient-to-r from-red-600 via-red-500 to-red-700 bg-clip-text text-red flex">
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '600ms'}}>P</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '900ms'}}>D</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '1200ms'}}>F</span>
+              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '600ms'}}>D</span>
+              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '900ms'}}>o</span>
+              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '1200ms'}}>c</span>
+              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '1200ms'}}>s</span>
             </div>
             <span className='p-2'></span>
-            <div className="text-3xl font-black bg-gradient-to-r from-red-600 via-red-500 to-red-700 bg-clip-text text-red flex">
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '300ms'}}>L</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '600ms'}}>i</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '900ms'}}>f</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '1200ms'}}>e</span>
-            </div>
           </div>
           
         </div>
@@ -56,7 +50,7 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
           </div>
         </div>
         
-        <div className="group relative">
+        {/* <div className="group relative">
           <button 
             onClick={onTogglePodcast} 
             className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
@@ -66,9 +60,9 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
             Generate podcast
           </div>
-        </div>
+        </div> */}
         
-        <div className="group relative">
+        {/* <div className="group relative">
           <button 
             onClick={onToggleInsights} 
             className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
@@ -78,7 +72,7 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
             Generate AI insights
           </div>
-        </div>
+        </div> */}
         
         {onLogout && (
           <div className="group relative">

@@ -3,11 +3,10 @@ import { useEffect, useRef } from "react";
 import { getRelated } from "../lib/api";
 import { setApis as setViewerApis, setNumPages as setViewerNumPages, gotoPage as viewerGotoPage, hasViewer as viewerHas } from "../lib/pdfViewerApi";
 
-// Load key from runtime env if provided by server
-const runtimeEnv = typeof window !== 'undefined' ? (window.__ENV || {}) : {};
-const ADOBE_CLIENT_ID = runtimeEnv.ADOBE_EMBED_API_KEY || process.env.NEXT_PUBLIC_ADOBE_EMBED_CLIENT_ID || "";
-
-// console.log("[Adobe PDF Embed] Adobe Client ID:", ADOBE_CLIENT_ID);
+// Replace with your Adobe PDF Embed API Client ID
+// const ADOBE_CLIENT_ID = process.env.NEXT_PUBLIC_ADOBE_EMBED_CLIENT_ID || "<YOUR_CLIENT_ID_HERE>";
+const ADOBE_CLIENT_ID = "8f94cb51c25d45b6ad598687c409fdcb";
+console.log("[Adobe PDF Embed] Adobe Client ID:", ADOBE_CLIENT_ID);
 function AdobePDFViewer({ docUrl, pageNumber = 1 }) {
   const viewerRef = useRef(null);
 
