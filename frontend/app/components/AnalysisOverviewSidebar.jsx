@@ -54,6 +54,18 @@ export default function AnalysisOverviewSidebar({ isOpen, onClose, analysisData,
 									</div>
 								</div>
 								
+								{/* PDF Document Name */}
+								{section.document && (
+									<div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md bg-slate-100/80 w-fit">
+										<svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+										</svg>
+										<span className="text-xs font-medium text-slate-600 truncate max-w-[280px]" title={section.document}>
+											{section.document}
+										</span>
+									</div>
+								)}
+								
 								<div className="text-sm font-semibold text-slate-800 mb-2 line-clamp-2">
 									{section.section_name}
 								</div>
