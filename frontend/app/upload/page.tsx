@@ -66,19 +66,15 @@ export default function UploadPage() {
             <div className="mb-6">
               <h1 className="text-5xl md:text-6xl font-bold text-red-800 mb-2 animate-fade-in-up">
                 <span className="inline-block animate-bounce-subtle delay-100">A</span>
-                <span className="inline-block animate-bounce-subtle delay-200">D</span>
+                <span className="inline-block animate-bounce-subtle delay-200">X</span>
                 <span className="inline-block animate-bounce-subtle delay-300">O</span>
-                <span className="inline-block animate-bounce-subtle delay-400">B</span>
-                <span className="inline-block animate-bounce-subtle delay-500">E</span>
+                <span className="inline-block animate-bounce-subtle delay-400">N</span>
+                <span className="inline-block animate-bounce-subtle delay-500">D</span>
                 <span className="mx-3"></span>
-                <span className="inline-block animate-bounce-subtle delay-600">P</span>
-                <span className="inline-block animate-bounce-subtle delay-700">D</span>
-                <span className="inline-block animate-bounce-subtle delay-800">F</span>
-                <span className="mx-3"></span>
-                <span className="inline-block animate-bounce-subtle delay-900">L</span>
-                <span className="inline-block animate-bounce-subtle delay-1000">I</span>
-                <span className="inline-block animate-bounce-subtle delay-1100">F</span>
-                <span className="inline-block animate-bounce-subtle delay-1200">E</span>
+                <span className="inline-block animate-bounce-subtle delay-600">O</span>
+                <span className="inline-block animate-bounce-subtle delay-700">C</span>
+                <span className="inline-block animate-bounce-subtle delay-800">S</span>
+                
               </h1>
               {/* Animated underline */}
               <div className="w-32 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto rounded-full animate-scale-x"></div>
