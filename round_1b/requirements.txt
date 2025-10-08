@@ -1,0 +1,14 @@
+# requirements.txt
+
+# Forcing pip to use the CPU-only repository for PyTorch
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Core libraries (minimal set)
+torch
+sentence-transformers
+pymupdf
+rank_bm25
+lightgbm
+scikit-learn
+joblib
+numpy

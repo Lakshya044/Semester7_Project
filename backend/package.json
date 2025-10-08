@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Backend ",
+  "description": "Backend for Axon Docs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
