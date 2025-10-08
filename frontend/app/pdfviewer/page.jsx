@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -204,66 +204,13 @@ export default function PdfViewerPage() {
 									isAdding={isAdding}
 								/>
 				<div className={`relative flex-grow h-full min-h-0 p-4 flex flex-col pdf-viewer-container transition-all duration-300 ${isAnalysisOpen ? 'mr-[420px]' : 'mr-0'}`}>
-					{/* Top Info Bar - Enhanced Futuristic Design */}
-					<div className="flex-none mb-4 bg-gradient-to-r from-indigo-900/80 via-purple-900/80 to-pink-900/80 backdrop-blur-md border-2 border-purple-500/30 rounded-2xl p-4 shadow-2xl relative overflow-hidden group">
-						{/* Animated background elements */}
-						<div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
-						<div className="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
-						
-						<div className="relative z-10 flex items-center justify-between">
-							<div className="flex items-center gap-4 flex-1 min-w-0">
-								<div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg">
-									<FileText size={24} className="text-white" />
-								</div>
-								<div className="flex-1 min-w-0">
-									<h3 className="font-bold text-white truncate text-base mb-1">
-										{decodeURIComponent(selectedFile || file).replace('.pdf', '')}
-									</h3>
-									<div className="flex items-center gap-3">
-										<span className="text-xs font-semibold px-3 py-1 rounded-lg bg-purple-500/30 text-purple-100 border border-purple-400/30">
-											PDF Document
-										</span>
-										<span className="text-xs font-semibold text-purple-200 flex items-center gap-1.5">
-											<div className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse"></div>
-											Page {selectedPage}
-										</span>
-									</div>
-								</div>
-							</div>
-							<div className="flex items-center gap-2">
-								<button
-									onClick={() => {
-										const newPage = Math.max(1, selectedPage - 1);
-										setSelectedPage(newPage);
-										router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${newPage}`);
-									}}
-									className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg"
-									aria-label="Previous page"
-								>
-									<ChevronLeft size={18} className="text-white" />
-								</button>
-								<button
-									onClick={() => {
-										const newPage = selectedPage + 1;
-										setSelectedPage(newPage);
-										router.replace(`/pdfviewer?file=${encodeURIComponent(selectedFile)}&page=${newPage}`);
-									}}
-									className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 transition-all duration-300 hover:scale-110 backdrop-blur-sm shadow-lg"
-									aria-label="Next page"
-								>
-									<ChevronRight size={18} className="text-white" />
-								</button>
-							</div>
-						</div>
-					</div>
-					
 					<div className="border-2 border-purple-500/30 bg-gradient-to-br from-slate-50 to-indigo-50/30 h-full rounded-2xl shadow-2xl overflow-hidden">
 						<PdfJsExpressViewer docUrl={docUrl} pageNumber={selectedPage} />
 						{showCopy && (
 							<div className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-red-700 text-white px-3 py-1.5 rounded shadow">
 								<span className="text-xs max-w-[40vw] truncate" title={lastSelectedText}>Copy selected</span>
 								<button onClick={handleCopySelected} className="text-xs font-semibold underline">Copy</button>
-								<button onClick={() => setShowCopy(false)} className="text-xs">×</button>
+								<button onClick={() => setShowCopy(false)} className="text-xs">Ã—</button>
 							</div>
 						)}
 					</div>

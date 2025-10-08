@@ -1,51 +1,99 @@
 "use client"
 import { PanelLeftClose, PanelLeftOpen, LogOut, Mic, Brain, PanelBottom, PanelBottomClose, Search, PanelRightClose, PanelRightOpen, BookOpen } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onToggleInsights, onToggleAnalysis, isAnalysisOpen, onToggleRelated, isRelatedOpen }) {
+  const orb1Ref = useRef(null);
+  const orb2Ref = useRef(null);
+  const orb3Ref = useRef(null);
+
+  useEffect(() => {
+    let frameId;
+    let time = 0;
+
+    const animate = () => {
+      time += 0.01;
+      
+      if (orb1Ref.current) {
+        const x = Math.sin(time * 0.5) * 30;
+        const y = Math.cos(time * 0.7) * 20;
+        orb1Ref.current.style.transform = `translate(${x}px, ${y}px)`;
+      }
+      
+      if (orb2Ref.current) {
+        const x = Math.cos(time * 0.6) * 40;
+        const y = Math.sin(time * 0.5) * 25;
+        orb2Ref.current.style.transform = `translate(${x}px, ${y}px)`;
+      }
+      
+      if (orb3Ref.current) {
+        const x = Math.sin(time * 0.4) * 35;
+        const y = Math.cos(time * 0.6) * 30;
+        orb3Ref.current.style.transform = `translate(${x}px, ${y}px)`;
+      }
+      
+      frameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
   return (
-    <header className="flex items-center justify-between h-16 px-6 bg-gradient-to-r from-red-50/90 to-red-100/90 backdrop-blur-sm border-b border-red-200/50 shadow-sm flex-shrink-0">
-      <div className="flex items-center gap-6">
+    <header className="relative flex items-center justify-between h-16 px-6 bg-gradient-to-r from-blue-400 via-slate-500/90 to-blue-800/90 backdrop-blur-md border-b border-slate-600/40 shadow-lg flex-shrink-0 overflow-hidden">
+      {/* Animated background orbs - more subtle */}
+      <div ref={orb1Ref} className="absolute left-[10%] top-1/2 w-32 h-32 bg-slate-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div ref={orb2Ref} className="absolute right-[30%] top-1/2 w-40 h-40 bg-slate-400/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div ref={orb3Ref} className="absolute right-[10%] top-1/2 w-36 h-36 bg-slate-500/8 rounded-full blur-3xl pointer-events-none"></div>
+      
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-3 pointer-events-none"></div>
+      
+      <div className="relative z-10 flex items-center gap-6">
         <div className="group relative">
           <button 
             onClick={toggleSidebar} 
-            className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md group"
+            className="p-2.5 rounded-lg bg-slate-700/50 backdrop-blur-sm border border-slate-500/30 hover:bg-slate-600/60 hover:border-slate-400/40 transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            {isSidebarOpen ? <PanelLeftClose size={18} className="text-red-700" /> : <PanelLeftOpen size={18} className="text-red-700" />}
+            {isSidebarOpen ? <PanelLeftClose size={18} className="text-slate-200" /> : <PanelLeftOpen size={18} className="text-slate-200" />}
           </button>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800/95 text-slate-200 text-xs rounded-md border border-slate-600/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg backdrop-blur-sm">
             {isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="relative overflow-hidden flex flex-row cursor-pointer">
-            <div className="text-3xl font-black bg-gradient-to-r from-red-600 via-red-500 to-red-700 bg-clip-text text-red flex">
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '0ms'}}>A</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '300ms'}}>x</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '600ms'}}>o</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '900ms'}}>n</span>
+        
+        <div className="flex items-center gap-3">
+          <div className="relative overflow-hidden flex flex-row cursor-pointer group">
+            
+            <div className="text-2xl font-bold text-slate-100 flex relative tracking-wide">
+              <span className="inline-block transition-transform hover:scale-105 duration-200">A</span>
+              <span className="inline-block transition-transform hover:scale-105 duration-200">x</span>
+              <span className="inline-block transition-transform hover:scale-105 duration-200">o</span>
+              <span className="inline-block transition-transform hover:scale-105 duration-200">n</span>
             </div>
-            <span className='p-2'></span>
-            <div className="text-3xl font-black bg-gradient-to-r from-red-600 via-red-500 to-red-700 bg-clip-text text-red flex">
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '600ms'}}>D</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '900ms'}}>o</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '1200ms'}}>c</span>
-              <span className="inline-block transition-transform hover:scale-110 duration-300" style={{animation: 'subtleShake 4s ease-in-out infinite', animationDelay: '1200ms'}}>s</span>
+            <span className='px-2'></span>
+            <div className="text-2xl font-bold text-slate-300 flex tracking-wide">
+              <span className="inline-block transition-transform hover:scale-105 duration-200">D</span>
+              <span className="inline-block transition-transform hover:scale-105 duration-200">o</span>
+              <span className="inline-block transition-transform hover:scale-105 duration-200">c</span>
+              <span className="inline-block transition-transform hover:scale-105 duration-200">s</span>
             </div>
-            <span className='p-2'></span>
+            
+            {/* Subtle underline on hover */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-slate-400 to-slate-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
           </div>
-          
         </div>
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="relative z-10 flex items-center gap-3">
         <div className="group relative">
           <button 
             onClick={onToggleRelated} 
-            className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="p-2.5 rounded-lg bg-slate-700/50 backdrop-blur-sm border border-slate-500/30 hover:bg-slate-600/60 hover:border-slate-400/40 transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            {isRelatedOpen ? <PanelRightClose size={18} className="text-red-700" /> : <Search size={18} className="text-red-700" />}
+            {isRelatedOpen ? <PanelRightClose size={18} className="text-slate-200" /> : <Search size={18} className="text-slate-200" />}
           </button>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800/95 text-slate-200 text-xs rounded-md border border-slate-600/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg backdrop-blur-sm">
             {isRelatedOpen ? 'Hide related findings' : 'Show related findings'}
           </div>
         </div>
@@ -53,11 +101,11 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
         <div className="group relative">
           <button 
             onClick={onToggleAnalysis} 
-            className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="p-2.5 rounded-lg bg-slate-700/50 backdrop-blur-sm border border-slate-500/30 hover:bg-slate-600/60 hover:border-slate-400/40 transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            {isAnalysisOpen ? <PanelRightClose size={18} className="text-red-700" /> : <BookOpen size={18} className="text-red-700" />}
+            {isAnalysisOpen ? <PanelRightClose size={18} className="text-slate-200" /> : <BookOpen size={18} className="text-slate-200" />}
           </button>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800/95 text-slate-200 text-xs rounded-md border border-slate-600/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg backdrop-blur-sm">
             {isAnalysisOpen ? 'Hide analysis overview' : 'Show analysis overview'}
           </div>
         </div>
@@ -65,11 +113,11 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
         {/* <div className="group relative">
           <button 
             onClick={onTogglePodcast} 
-            className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="p-2.5 rounded-lg bg-slate-700/50 backdrop-blur-sm border border-slate-500/30 hover:bg-slate-600/60 hover:border-slate-400/40 transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            <Mic size={18} className="text-red-700" />
+            <Mic size={18} className="text-slate-200" />
           </button>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800/95 text-slate-200 text-xs rounded-md border border-slate-600/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg backdrop-blur-sm">
             Generate podcast
           </div>
         </div> */}
@@ -77,11 +125,11 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
         {/* <div className="group relative">
           <button 
             onClick={onToggleInsights} 
-            className="p-2 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="p-2.5 rounded-lg bg-slate-700/50 backdrop-blur-sm border border-slate-500/30 hover:bg-slate-600/60 hover:border-slate-400/40 transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            <Brain size={18} className="text-red-700" />
+            <Brain size={18} className="text-slate-200" />
           </button>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800/95 text-slate-200 text-xs rounded-md border border-slate-600/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg backdrop-blur-sm">
             Generate AI insights
           </div>
         </div> */}
@@ -90,11 +138,11 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
           <div className="group relative">
             <button 
               onClick={onLogout} 
-              className="p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-red-200/70 hover:bg-red-50/80 hover:border-red-300/80 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="p-2.5 rounded-lg bg-slate-700/50 backdrop-blur-sm border border-slate-500/30 hover:bg-slate-600/60 hover:border-slate-400/40 transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              <LogOut size={18} className="text-red-700" />
+              <LogOut size={18} className="text-slate-200" />
             </button>
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-black/90 text-white text-xs rounded-md border border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-slate-800/95 text-slate-200 text-xs rounded-md border border-slate-600/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg backdrop-blur-sm">
               Sign out
             </div>
           </div>
@@ -102,10 +150,11 @@ function Header({ isSidebarOpen, toggleSidebar, onLogout, onTogglePodcast, onTog
       </div>
       
       <style jsx global>{`
-        @keyframes subtleShake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-0.5px); }
-          75% { transform: translateX(0.5px); }
+        .bg-grid-pattern {
+          background-image: 
+            linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+          background-size: 20px 20px;
         }
       `}</style>
     </header>
