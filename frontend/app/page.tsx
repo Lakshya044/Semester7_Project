@@ -85,7 +85,7 @@ export default function HomePage() {
           
           <div className="relative">
             <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-red-100 to-white bg-clip-text text-transparent animate-gradient-shift">
-              ADOBE PDF LIFE
+              AXON DOCS
             </h2>
             {/* Animated underline */}
             <div className="w-64 h-1 bg-gradient-to-r from-transparent via-white to-transparent mx-auto mt-4 animate-shine"></div>

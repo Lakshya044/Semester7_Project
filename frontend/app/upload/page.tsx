@@ -69,8 +69,9 @@ export default function UploadPage() {
                 <span className="inline-block animate-bounce-subtle delay-200">X</span>
                 <span className="inline-block animate-bounce-subtle delay-300">O</span>
                 <span className="inline-block animate-bounce-subtle delay-400">N</span>
-                <span className="inline-block animate-bounce-subtle delay-500">D</span>
+                
                 <span className="mx-3"></span>
+                <span className="inline-block animate-bounce-subtle delay-500">D</span>
                 <span className="inline-block animate-bounce-subtle delay-600">O</span>
                 <span className="inline-block animate-bounce-subtle delay-700">C</span>
                 <span className="inline-block animate-bounce-subtle delay-800">S</span>
