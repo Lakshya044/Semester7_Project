@@ -4,18 +4,36 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const cookieParser = require('cookie-parser');
+const passport = require('passport');
+const { connectDB } = require('./db/index');
 
 const app = express();
 
 app.use(cors({
-  origin: '*',
+  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
   credentials: true,
   allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
+
+// Connect to MongoDB if configured
+connectDB();
 
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
+
+// New routes: auth and files
+try {
+  const authRoutes = require('./routes/auth');
+  app.use('/auth', authRoutes);
+} catch {}
+try {
+  const filesRoutes = require('./routes/files');
+  app.use('/api/files', filesRoutes);
+} catch {}
 
 const PORT = process.env.PORT || 5001;
 const server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

@@ -16,6 +16,13 @@
     }
 
     const upload = multer({ dest: uploadsDir });
+    // Optional S3 integration (upload copies to cloud if configured)
+    let s3Helpers = null;
+    try {
+      s3Helpers = require('../services/s3');
+    } catch (_) {
+      // aws sdk not installed or service missing; skip cloud upload
+    }
 
     // Resolve a usable Python executable on the host system
     function resolvePythonExecutable() {
@@ -52,7 +59,9 @@
       // Copy each uploaded PDF to frontend/public/pdfs for frontend access
       const frontendPdfsDir = path.resolve(__dirname, '../../frontend/public/pdfs');
       fs.mkdirSync(frontendPdfsDir, { recursive: true });
-      req.files.forEach(file => {
+      // Track S3 uploads (if enabled)
+      const s3Uploaded = [];
+      req.files.forEach(async (file) => {
         const destPath = path.join(pdfsDir, file.originalname);
         // Move the uploaded temp file into this collection's PDFs folder
         try {
@@ -62,9 +71,20 @@
           fs.copyFileSync(file.path, destPath);
           fs.unlinkSync(file.path);
         }
-        // Copy to frontend/public/pdfs
+        // Copy to frontend/public/pdfs (for current UI viewing)
         const frontendDest = path.join(frontendPdfsDir, file.originalname);
         fs.copyFileSync(destPath, frontendDest);
+
+        // Also upload to S3 if configured
+        try {
+          if (s3Helpers && process.env.S3_BUCKET && process.env.AWS_REGION) {
+            const key = `uploads/${uniqueId}/${file.originalname}`;
+            await s3Helpers.s3PutFile(destPath, key, file.mimetype || 'application/pdf');
+            s3Uploaded.push({ originalName: file.originalname, key });
+          }
+        } catch (e) {
+          console.warn('S3 upload failed for', file.originalname, e && e.message ? e.message : String(e));
+        }
       });
 
       // Also include all existing PDFs in frontend/public/pdfs into this collection for analysis
@@ -180,7 +200,11 @@
           // No DB, just return analysis result
           res.status(201).json({
             collectionName,
-            analysisData: analysisResult
+            analysisData: analysisResult,
+            cloud: (s3Helpers && process.env.S3_BUCKET && process.env.AWS_REGION) ? {
+              bucket: process.env.S3_BUCKET,
+              prefix: `uploads/${uniqueId}/`
+            } : null
           });
           // Only delete if collectionPath is a subfolder of uploadsDir
           if (collectionPath !== uploadsDir && collectionPath.startsWith(uploadsDir)) {
