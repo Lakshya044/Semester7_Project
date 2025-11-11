@@ -18,7 +18,9 @@ const analysisSchema = new mongoose.Schema({
 }, { _id: false, timestamps: true });
 
 const collectionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+  // store Firebase UID directly (string)
+  collectionId: { type: String, unique: true, index: true, default: () => require('crypto').randomUUID() },
+  userId: { type: String, index: true }, // <-- changed: Firebase UID (string) instead of ObjectId
   name: String,
   persona: String,
   jobToBeDone: String,
@@ -27,5 +29,8 @@ const collectionSchema = new mongoose.Schema({
   status: { type: String, enum: ['idle', 'processing', 'ready', 'error'], default: 'idle' },
   lastRunAt: Date,
 }, { timestamps: true });
+
+// Enforce uniqueness of collection name per user
+collectionSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 module.exports = mongoose.models.Collection || mongoose.model('Collection', collectionSchema);

@@ -13,7 +13,10 @@ const app = express();
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
   credentials: true,
-  allowedHeaders: ['Content-Type']
+  // Allow Authorization and other common headers so uploads and token-bearing requests succeed
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  exposedHeaders: ['Authorization']
 }));
 app.use(express.json());
 app.use(cookieParser());

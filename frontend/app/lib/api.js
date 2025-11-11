@@ -1,5 +1,6 @@
 // app/lib/api.js
 import axios from 'axios';
+import { getIdTokenForCurrentUser, getCurrentUser } from '../../lib/firebaseClient';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 export const apiClient = axios.create({ baseURL: API_URL });
@@ -12,9 +13,20 @@ export async function uploadDocumentCollection(files, collectionName, persona, j
   formData.append('jobTask', jobToBeDone);
   files.forEach(function(file) { formData.append('pdfs', file); });
 
-  const response = await apiClient.post('/api/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  // new: attach idToken and userId when available so backend can persist user
+  const idToken = await getIdTokenForCurrentUser();
+  const currentUser = getCurrentUser();
+  if (idToken) {
+    formData.append('idToken', idToken); // backend helper also checks body.idToken
+  }
+  if (currentUser && currentUser.uid) {
+    formData.append('userId', currentUser.uid);
+  }
+
+  const headers = { 'Content-Type': 'multipart/form-data' };
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+  const response = await apiClient.post('/api/upload', formData, { headers });
   return response.data.analysisData;
 }
 

@@ -5,8 +5,11 @@
     const { spawn, spawnSync } = require('child_process');
     const fs = require('fs');
     const path = require('path');
-  // const DocumentCollection = require('../models/DocumentCollection');
-  // const auth = require('../middleware/authMiddleware');
+    const Collection = require('../models/Collection');
+    const User = require('../models/User'); // new: user model
+    const { randomUUID } = require('crypto');
+    // new: verifyIdToken helper to decode Firebase ID tokens if present
+    const { verifyIdToken, getAdmin } = require('../firebaseAdmin');
 
 
     // Ensure uploads directory always exists
@@ -59,9 +62,21 @@
       // Copy each uploaded PDF to frontend/public/pdfs for frontend access
       const frontendPdfsDir = path.resolve(__dirname, '../../frontend/public/pdfs');
       fs.mkdirSync(frontendPdfsDir, { recursive: true });
-      // Track S3 uploads (if enabled)
+      // Track S3 uploads (if enabled) and prepare documents metadata for DB
       const s3Uploaded = [];
-      req.files.forEach(async (file) => {
+      const documentsForDb = [];
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded' });
+      }
+
+      // Ensure S3 helpers are configured
+      const s3Enabled = !!(s3Helpers && process.env.S3_BUCKET && process.env.AWS_REGION);
+      if (!s3Enabled) {
+        return res.status(500).json({ error: 'S3 not configured. Set AWS_REGION and S3_BUCKET and ensure services/s3 is available.' });
+      }
+
+      for (const file of req.files) {
         const destPath = path.join(pdfsDir, file.originalname);
         // Move the uploaded temp file into this collection's PDFs folder
         try {
@@ -69,23 +84,32 @@
         } catch (_) {
           // If rename across devices fails, fallback to copy+unlink
           fs.copyFileSync(file.path, destPath);
-          fs.unlinkSync(file.path);
+          try { fs.unlinkSync(file.path); } catch (e) {}
         }
         // Copy to frontend/public/pdfs (for current UI viewing)
         const frontendDest = path.join(frontendPdfsDir, file.originalname);
-        fs.copyFileSync(destPath, frontendDest);
+        try { fs.copyFileSync(destPath, frontendDest); } catch (e) { /* ignore */ }
 
-        // Also upload to S3 if configured
+        // Upload to S3 with a unique key
         try {
-          if (s3Helpers && process.env.S3_BUCKET && process.env.AWS_REGION) {
-            const key = `uploads/${uniqueId}/${file.originalname}`;
-            await s3Helpers.s3PutFile(destPath, key, file.mimetype || 'application/pdf');
-            s3Uploaded.push({ originalName: file.originalname, key });
-          }
+          const ext = path.extname(file.originalname) || '.pdf';
+          const key = `uploads/${uniqueId}/${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+          await s3Helpers.s3PutFile(destPath, key, file.mimetype || 'application/pdf');
+          let publicUrl = null;
+          try { publicUrl = await s3Helpers.s3Presign(key, 60 * 60); } catch (_) { publicUrl = null; }
+          s3Uploaded.push({ originalName: file.originalname, key });
+          documentsForDb.push({
+            originalName: file.originalname,
+            storedName: key,
+            size: file.size,
+            mimeType: file.mimetype,
+            publicUrl,
+            pages: null
+          });
         } catch (e) {
           console.warn('S3 upload failed for', file.originalname, e && e.message ? e.message : String(e));
         }
-      });
+      }
 
       // Also include all existing PDFs in frontend/public/pdfs into this collection for analysis
       try {
@@ -148,6 +172,59 @@
 
   console.log('Created challenge1b_input.json with', documentsArray.length, 'documents.');
 
+      // Persist collection metadata in MongoDB
+      let collectionDoc = null;
+      try {
+        // Prefer explicit userId sent in the multipart/form-data (frontend appends 'userId').
+        // Fallback to req.userId or Authorization Bearer token verification.
+        let userId = null;
+        try {
+          if (req.body && req.body.userId) {
+            userId = req.body.userId;
+            console.debug('Upload: using userId from request body:', userId);
+          } else if (req.userId) {
+            userId = req.userId;
+            console.debug('Upload: using req.userId (middleware):', userId);
+          } else {
+            const authHeader = (req.headers && req.headers.authorization) || '';
+            const match = authHeader.match(/^Bearer\s+(.+)$/i);
+            if (match) {
+              const idToken = match[1];
+              try {
+                const decoded = await verifyIdToken(idToken);
+                if (decoded && decoded.uid) {
+                  userId = decoded.uid;
+                  console.debug('Upload: verified idToken, uid=', userId);
+                }
+              } catch (e) {
+                console.warn('Upload: failed to verify ID token:', e && e.message ? e.message : String(e));
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Upload: error while resolving userId:', e && e.message ? e.message : String(e));
+        }
+
+        // generate a stable collectionId for frontend lookups
+        const collectionId = randomUUID();
+        collectionDoc = await Collection.create({
+          collectionId,
+          userId: userId || null, // saved from body or resolved uid
+          name: collectionName,
+          persona: req.body.personaRole,
+          jobToBeDone: req.body.jobTask,
+          documents: documentsForDb,
+          status: 'processing'
+        });
+        console.debug('Upload: created collection', { collectionId: collectionDoc.collectionId, mongoId: collectionDoc._id, userId: collectionDoc.userId });
+      } catch (e) {
+        // Handle duplicate name for same user (unique index violation)
+        if (e && e.code === 11000) {
+          return res.status(409).json({ error: 'A collection with that name already exists for this user. Please use a different name.' });
+        }
+        console.warn('Failed to save collection metadata:', e && e.message ? e.message : String(e));
+      }
+
       try {
         const pythonScriptPath = path.resolve(__dirname, '../../round_1b/run.py');
         const pythonScriptDir = path.resolve(__dirname, '../../round_1b');
@@ -197,10 +274,23 @@
           } catch (e) {
             console.warn('Warning: could not write uploads root output copy:', e.message || e);
           }
-          // No DB, just return analysis result
+          // Update stored collection with analysis result and return
+          try {
+            if (collectionDoc) {
+              collectionDoc.analysis = analysisResult;
+              collectionDoc.status = 'ready';
+              collectionDoc.lastRunAt = new Date();
+              await collectionDoc.save();
+            }
+          } catch (e) {
+            console.warn('Failed to update collection with analysis:', e && e.message ? e.message : String(e));
+          }
+
           res.status(201).json({
             collectionName,
+            collectionId: collectionDoc ? collectionDoc._id : null,
             analysisData: analysisResult,
+            documents: documentsForDb,
             cloud: (s3Helpers && process.env.S3_BUCKET && process.env.AWS_REGION) ? {
               bucket: process.env.S3_BUCKET,
               prefix: `uploads/${uniqueId}/`
@@ -217,8 +307,49 @@
     });
 
     router.get('/history', async (req, res) => {
-      // No DB, no auth, return empty array or placeholder
-      res.json([]);
+      try {
+        const { userId, collectionId } = req.query;
+        if (!userId) {
+          return res.status(400).json({ error: 'userId query parameter is required' });
+        }
+
+        if (collectionId) {
+          // Return full collection details if it belongs to the given userId
+          const col = await Collection.findOne({ collectionId, userId }).lean();
+          if (!col) return res.status(404).json({ error: 'Collection not found for this user' });
+
+          // Build accessible URLs for each document:
+          // - use publicUrl (S3 presigned) if present
+          // - otherwise point to the frontend public pdfs folder: ${protocol}://${host}/pdfs/<filename>
+          const hostBase = `${req.protocol}://${req.get('host')}`;
+          const docsWithUrls = (col.documents || []).map(d => {
+            const originalName = d.originalName || '';
+            const storedName = d.storedName || '';
+            const filenameFallback = originalName || path.basename(storedName) || '';
+            const localUrl = filenameFallback ? `${hostBase}/pdfs/${encodeURIComponent(filenameFallback)}` : null;
+            const accessibleUrl = d.publicUrl || localUrl;
+            return { ...d, accessibleUrl };
+          });
+
+          return res.json({ ...col, documents: docsWithUrls });
+        }
+
+        // Return list view for the user's collections
+        const cols = await Collection.find({ userId }).lean().sort({ createdAt: -1 });
+        const list = cols.map(c => ({
+          collectionId: c.collectionId || c._id,
+          name: c.name,
+          status: c.status,
+          createdAt: c.createdAt,
+          lastRunAt: c.lastRunAt,
+          documentsCount: Array.isArray(c.documents) ? c.documents.length : 0,
+          persona: c.persona,
+          jobToBeDone: c.jobToBeDone
+        }));
+        res.json(list);
+      } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch history', details: e && e.message ? e.message : String(e) });
+      }
     });
 
     // Expose the latest analysis output for the frontend when session data is missing
@@ -297,5 +428,97 @@
         res.status(500).json({ error: 'Internal error', details: e && e.message ? e.message : String(e) });
       }
     });
+
+    // New: upsert Firebase user on sign-in
+router.post('/auth/google', async (req, res) => {
+  try {
+    // Accept idToken either in body.idToken or Authorization header
+    let idToken = req.body && req.body.idToken;
+    if (!idToken) {
+      const authHeader = (req.headers && req.headers.authorization) || '';
+      const m = authHeader.match(/^Bearer\s+(.+)$/i);
+      if (m) idToken = m[1];
+    }
+    if (!idToken) {
+      return res.status(400).json({ error: 'idToken is required (body.idToken or Authorization: Bearer <token>)' });
+    }
+
+    // Verify token (this will lazy-init firebase admin). Throws if invalid or admin not configured.
+    const decoded = await verifyIdToken(idToken);
+    if (!decoded || !decoded.uid) {
+      return res.status(401).json({ error: 'Invalid ID token' });
+    }
+    const uid = decoded.uid;
+
+    // Try to enrich profile using admin SDK if available
+    let providerData = decoded.provider_id ? [decoded.provider_id] : [];
+    let photoURL = decoded.picture || decoded.photoURL || null;
+    let displayName = decoded.name || decoded.displayName || null;
+    let email = decoded.email || null;
+    try {
+      const admin = getAdmin();
+      if (admin) {
+        // admin may be null if not configured
+        const userRecord = await admin.auth().getUser(uid);
+        if (userRecord) {
+          providerData = userRecord.providerData || providerData;
+          photoURL = photoURL || userRecord.photoURL || null;
+          displayName = displayName || userRecord.displayName || null;
+          email = email || userRecord.email || null;
+        }
+      }
+    } catch (e) {
+      // ignore enrichment errors; we'll still upsert using decoded token
+      console.warn('Could not fetch full userRecord from Firebase admin:', e && e.message ? e.message : e);
+    }
+
+    // Upsert user in MongoDB
+    const now = new Date();
+    const update = {
+      firebaseUid: uid,
+      email,
+      displayName,
+      photoURL,
+      providerData,
+      lastSeen: now,
+      customClaims: decoded || {}
+    };
+    const opts = { upsert: true, new: true, setDefaultsOnInsert: true };
+
+    const saved = await User.findOneAndUpdate({ firebaseUid: uid }, update, opts).lean();
+
+    return res.json({ user: saved });
+  } catch (err) {
+    console.error('Auth upsert error:', err && err.message ? err.message : err);
+    // If firebase admin not configured the verifyIdToken throws a clear error; forward it
+    return res.status(500).json({ error: 'Failed to upsert user', details: err && err.message ? err.message : String(err) });
+  }
+});
+
+    // Add: list collections for any user (lightweight summary)
+router.get('/collections', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId query parameter is required' });
+    }
+
+    const cols = await Collection.find({ userId }).lean().sort({ createdAt: -1 });
+    const list = cols.map(c => ({
+      collectionId: c.collectionId || c._id,
+      name: c.name,
+      jobToBeDone: c.jobToBeDone,
+      persona: c.persona,
+      status: c.status,
+      createdAt: c.createdAt,
+      lastRunAt: c.lastRunAt,
+      documentsCount: Array.isArray(c.documents) ? c.documents.length : 0
+    }));
+
+    res.json(list);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch collections', details: e && e.message ? e.message : String(e) });
+  }
+});
 
     module.exports = router;

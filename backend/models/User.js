@@ -1,24 +1,14 @@
-// backend/models/User.js
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
-  googleId: { type: String, index: true, unique: true, sparse: true },
-  name: String,
+const UserSchema = new mongoose.Schema({
+  firebaseUid: { type: String, required: true, unique: true, index: true },
   email: { type: String, index: true },
-  avatar: String,
+  displayName: String,
+  photoURL: String,
+  providerData: Array,
+  customClaims: Object,
+  lastSeen: Date,
+  createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-module.exports = mongoose.models.User || mongoose.model('User', userSchema);
-// backend/models/User.js
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
-
-const UserSchema = new Schema({
-  googleId: { type: String },
-  email: { type: String, required: true, unique: true, sparse: true },
-  displayName: { type: String },
-  isGuest: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-});
-
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.models.User || mongoose.model('User', UserSchema);
