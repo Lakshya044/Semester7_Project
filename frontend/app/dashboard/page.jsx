@@ -5,10 +5,11 @@ import Header from "@/app/components/Header.jsx";
 import Sidebar from "@/app/components/Sidebar.jsx";
 import PDFViewer from "@/app/components/PDFViewer.jsx";
 import InsightsSidebar from "@/app/components/InsightsSidebar";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 import { Loader2 } from 'lucide-react';
 import { getHistory } from '@/app/lib/api';
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [analysisData, setAnalysisData] = useState(null);
   const [history, setHistory] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -78,5 +79,13 @@ export default function DashboardPage() {
         /> */}
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardPageContent />
+    </ProtectedRoute>
   );
 }

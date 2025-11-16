@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, FileText, Loader2, ArrowRight, CheckCircle } from "lucide-react";
 import { uploadDocumentCollection } from "@/app/lib/api";
-import AuthTestPage from"../../lib/auth-test";
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 
-export default function UploadPage() {
+function UploadPageContent() {
   const [files, setFiles] = useState<File[]>([]);
   const [collectionName, setCollectionName] = useState("");
   const [persona, setPersona] = useState("");
@@ -52,7 +52,6 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-200">
       {/* Header Section */}
-      <AuthTestPage />
       <div className="bg-white shadow-sm border-b border-red-200 relative overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 opacity-5">
@@ -291,5 +290,13 @@ export default function UploadPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UploadPage() {
+  return (
+    <ProtectedRoute>
+      <UploadPageContent />
+    </ProtectedRoute>
   );
 }

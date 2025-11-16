@@ -2,14 +2,31 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
 import { Loader2, FileText, Zap, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Progress animation
+    if (loading) return;
+
+    // Redirect based on auth status
+    if (isAuthenticated) {
+      router.push('/dashboard');
+      return;
+    } else {
+      router.push('/login');
+      return;
+    }
+  }, [isAuthenticated, loading, router]);
+
+  useEffect(() => {
+    // Progress animation (only if we're showing the page)
+    if (loading) return;
+    
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
@@ -20,16 +37,10 @@ export default function HomePage() {
       });
     }, 40);
 
-    // Redirect after animation
-    const timer = setTimeout(() => {
-      router.push('/upload');
-    }, 3500);
-
     return () => {
-      clearTimeout(timer);
       clearInterval(progressInterval);
     };
-  }, [router]);
+  }, [loading]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-700 to-red-600 relative overflow-hidden">

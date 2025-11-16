@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult as firebaseGetRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 // Helper to clean env values that may be quoted in .env
 function cleanEnv(v) {
@@ -89,6 +89,7 @@ function getAuthIfReady() {
 }
 
 // Sign in with Google popup. Returns the UserCredential or throws if not available.
+// Falls back to redirect if popup is blocked.
 export async function signInWithGooglePopup() {
   const auth = getAuthIfReady();
   if (!auth) {
@@ -99,7 +100,43 @@ export async function signInWithGooglePopup() {
     );
   }
   const provider = new GoogleAuthProvider();
-  return signInWithPopup(auth, provider);
+  
+  try {
+    return await signInWithPopup(auth, provider);
+  } catch (error) {
+    // If popup is blocked, fall back to redirect
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+      // Use redirect instead
+      await signInWithRedirect(auth, provider);
+      // This will redirect the page, so we throw a special error to indicate redirect
+      throw new Error('REDIRECT_INITIATED');
+    }
+    throw error;
+  }
+}
+
+// Sign in with Google redirect (alternative to popup)
+export async function signInWithGoogleRedirect() {
+  const auth = getAuthIfReady();
+  if (!auth) {
+    throw new Error(
+      'Firebase Auth is not available in this environment. Ensure frontend NEXT_PUBLIC_FIREBASE_API_KEY is set and code runs in the browser.'
+    );
+  }
+  const provider = new GoogleAuthProvider();
+  return signInWithRedirect(auth, provider);
+}
+
+// Check if we're returning from a redirect and get the result
+export async function getRedirectResult() {
+  const auth = getAuthIfReady();
+  if (!auth) return null;
+  try {
+    return await firebaseGetRedirectResult(auth);
+  } catch (error) {
+    console.error('Error getting redirect result:', error);
+    return null;
+  }
 }
 
 // Sign out current user.

@@ -5,6 +5,20 @@ import { getIdTokenForCurrentUser, getCurrentUser } from '../../lib/firebaseClie
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 export const apiClient = axios.create({ baseURL: API_URL });
 
+// Add request interceptor to include auth token in all requests
+apiClient.interceptors.request.use(
+  async (config) => {
+    const idToken = await getIdTokenForCurrentUser();
+    if (idToken) {
+      config.headers.Authorization = `Bearer ${idToken}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // --- Main App Functions ---
 export async function uploadDocumentCollection(files, collectionName, persona, jobToBeDone) {
   const formData = new FormData();
@@ -36,7 +50,13 @@ export async function getInsights(text_content) {
 }
 
 export async function getHistory() {
-  const res = await apiClient.get('/api/history');
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.uid) {
+    throw new Error('User must be authenticated to view history');
+  }
+  const res = await apiClient.get('/api/history', {
+    params: { userId: currentUser.uid }
+  });
   return res.data;
 }
 

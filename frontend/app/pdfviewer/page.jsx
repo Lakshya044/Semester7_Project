@@ -7,6 +7,7 @@ import Sidebar from "../components/Sidebar.jsx";
 import RelatedFindingsSidebar from "../components/RelatedFindingsSidebar.jsx";
 import AnalysisOverviewSidebar from "../components/AnalysisOverviewSidebar.jsx";
 import SubsectionsModal from "../components/SubsectionsModal.jsx";
+import ProtectedRoute from "../components/ProtectedRoute";
 import { uploadDocumentCollection, getLatestOutput } from '../lib/api';
 import { getRelated } from '../lib/api';
 import PdfJsExpressViewer from '../components/PDFViewer';
@@ -15,7 +16,7 @@ import InsightsSidebar from "../components/InsightsSidebar";
 import { Loader2, X, ChevronLeft, ChevronRight, FileText, Search } from 'lucide-react';
 import { getHistory } from '../lib/api';
 
-export default function PdfViewerPage() {
+function PdfViewerPageContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const file = searchParams.get('file');
@@ -302,5 +303,13 @@ export default function PdfViewerPage() {
 				}
 			`}</style>
 		</div>
+	);
+}
+
+export default function PdfViewerPage() {
+	return (
+		<ProtectedRoute>
+			<PdfViewerPageContent />
+		</ProtectedRoute>
 	);
 }
