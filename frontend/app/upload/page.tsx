@@ -2,9 +2,10 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UploadCloud, FileText, Loader2, ArrowRight, CheckCircle } from "lucide-react";
+import { UploadCloud, FileText, Loader2, ArrowRight, CheckCircle, LogOut, Home } from "lucide-react";
 import { uploadDocumentCollection } from "@/app/lib/api";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
+import { useAuth } from "@/app/context/AuthContext";
 
 function UploadPageContent() {
   const [files, setFiles] = useState<File[]>([]);
@@ -14,6 +15,16 @@ function UploadPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { logout, user } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFiles(Array.from(e.target.files));
@@ -51,6 +62,77 @@ function UploadPageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-200">
+      {/* Navbar */}
+      <nav className="bg-gradient-to-r from-red-700 to-red-600 shadow-lg border-b border-red-800">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo/Brand */}
+            <div className="flex items-center space-x-4">
+              <div 
+                onClick={() => router.push('/dashboard')}
+                className="cursor-pointer flex items-center space-x-2 group"
+              >
+                <div className="w-10 h-10 bg-white/20 rounded-lg backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:bg-white/30 transition-all duration-200">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold text-white tracking-wide">Axon</span>
+                  <span className="text-sm font-semibold text-red-100 tracking-wide">Docs</span>
+                </div>
+              </div>
+            </div>
+
+            {/* User Info and Actions */}
+            <div className="flex items-center space-x-4">
+              {/* User Info */}
+              {user && (
+                <div className="hidden md:flex items-center space-x-3 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
+                  {user.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt={user.displayName || 'User'} 
+                      className="w-8 h-8 rounded-full border-2 border-white/30"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center">
+                      <span className="text-white text-sm font-semibold">
+                        {user.displayName?.[0] || user.email?.[0] || 'U'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-white">
+                      {user.displayName || 'User'}
+                    </span>
+                    <span className="text-xs text-red-100">
+                      {user.email}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Dashboard Button */}
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 text-white transition-all duration-200 group"
+              >
+                <Home className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-medium">Dashboard</span>
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 text-white transition-all duration-200 group"
+              >
+                <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-medium">Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Header Section */}
       <div className="bg-white shadow-sm border-b border-red-200 relative overflow-hidden">
         {/* Animated background elements */}
